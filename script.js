@@ -1,34 +1,57 @@
-// Step 1: Find the form by ID
-document.getElementById("contactForm").addEventListener("submit", async function (e) {
+// Wait until the HTML page is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
 
-  // Step 2: Stop page refresh
-  e.preventDefault();
+  const form = document.getElementById("contactForm");
+  const status = document.getElementById("status");
+  const submitBtn = form.querySelector("button");
 
-  // Step 3: Read values from form inputs
-  const data = {
-    name: document.getElementById("name").value,
-    email: document.getElementById("email").value,
-    message: document.getElementById("message").value
-  };
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  try {
-    // Step 4: Send data to ASP.NET Web API
-    const response = await fetch("http://localhost:5169/api/contact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    });
+    // Read input values
+    const data = {
+      name: document.getElementById("name").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      message: document.getElementById("message").value.trim()
+    };
 
-    // Step 5: Read API response
-    const result = await response.json();
+    // Basic validation
+    if (!data.name || !data.email || !data.message) {
+      status.innerText = "❌ Please fill all fields.";
+      status.style.color = "red";
+      return;
+    }
 
-    // Step 6: Show success message
-    document.getElementById("status").innerText = result.message;
+    // UI feedback
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Sending...";
+    status.innerText = "";
 
-  } catch (error) {
-    // Step 7: Show error message
-    document.getElementById("status").innerText = "Error sending message";
-  }
+    try {
+      const response = await fetch("http://localhost:5169/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
+
+      const result = await response.json();
+
+      status.innerText = "✅ Message sent successfully!";
+      status.style.color = "green";
+      form.reset();
+
+    } catch (error) {
+      status.innerText = "❌ Backend not reachable. Please try again later.";
+      status.style.color = "red";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Send Message";
+    }
+  });
 });
